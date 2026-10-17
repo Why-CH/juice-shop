@@ -3,35 +3,44 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { type Request, type Response, type NextFunction } from 'express'
-import { ProductModel } from '../models/product'
-import { BasketModel } from '../models/basket'
-import * as challengeUtils from '../lib/challengeUtils'
+import { type Request, type Response, type NextFunction } from "express";
+import { ProductModel } from "../models/product";
+import { BasketModel } from "../models/basket";
+import * as challengeUtils from "../lib/challengeUtils";
 
-import * as utils from '../lib/utils'
-import * as security from '../lib/insecurity'
-import { challenges } from '../data/datacache'
+import * as utils from "../lib/utils";
+import * as security from "../lib/insecurity";
+import { challenges } from "../data/datacache";
 
-export function retrieveBasket () {
+export function retrieveBasket() {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const id = req.params.id
-      const basket = await BasketModel.findOne({ where: { id }, include: [{ model: ProductModel, paranoid: false, as: 'Products' }] })
+      const id = req.params.id;
+      const user = security.authenticatedUsers.from(req);
+
+      if (user && user.bid && user.bid !== parseInt(id, 10)) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const basket = await BasketModel.findOne({
+        where: { id },
+        include: [{ model: ProductModel, paranoid: false, as: "Products" }],
+      });
       /* jshint eqeqeq:false */
       challengeUtils.solveIf(challenges.basketAccessChallenge, () => {
-        const user = security.authenticatedUsers.from(req)
-        const isValidId = id && id !== 'undefined' && id !== 'null' && id !== 'NaN'
-        return user && isValidId && user.bid && user?.bid != parseInt(id, 10) // eslint-disable-line eqeqeq
-      })
-      if (((basket?.Products) != null) && basket.Products.length > 0) {
+        const isValidId =
+          id && id !== "undefined" && id !== "null" && id !== "NaN";
+        return user && isValidId && user.bid && user?.bid != parseInt(id, 10); // eslint-disable-line eqeqeq
+      });
+      if (basket?.Products != null && basket.Products.length > 0) {
         for (let i = 0; i < basket.Products.length; i++) {
-          basket.Products[i].name = req.__(basket.Products[i].name)
+          basket.Products[i].name = req.__(basket.Products[i].name);
         }
       }
 
-      res.json(utils.queryResultToJson(basket))
+      res.json(utils.queryResultToJson(basket));
     } catch (error) {
-      next(error)
+      next(error);
     }
-  }
+  };
 }
