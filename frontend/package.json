@@ -3,7 +3,7 @@
   "version": "20.3.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
+    "start": "ng serve --host 0.0.0.0",
     "build": "ng build --configuration production && npm run sbom",
     "sbom": "cyclonedx-esbuild --output-reproducible --output-file dist/bom/bom.json dist/frontend/browser-stats.json",
     "bundle-visualizer": "node --experimental-strip-types filter-bundle-stats-for-diagram.mts && npx esbuild-visualizer --metadata dist/frontend/stats-filtered.json --filename dist/frontend/bundle-report.html",
